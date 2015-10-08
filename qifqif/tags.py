@@ -12,10 +12,27 @@ import re
 
 TAGS = dict()
 
+SENTINELS = ('⌚', '✏')
+FIELDS = {'⌚': 'payee', 
+    '✏': 'note',
+    }
 
-def is_match(keyword, payee):
+def is_match(line, t):
     """Returns True if payee line contains keyword.
     """
+    tokens = re.split('(%s)' % '|'.join(SENTINELS), line)
+    field = 'payee'
+    match = {}
+    for tok in tokens:
+        if tok in SENTINELS:
+            field = FIELDS[t]
+            continue
+        match[field].append(tok)
+    ok = True
+    for field in match:
+        pattern = '.*'.join(match[field])
+        ok &= re.match(pattern, t[field])
+
     return re.search(r'\b%s\b' % re.escape(keyword), payee, re.I) is not None
 
 

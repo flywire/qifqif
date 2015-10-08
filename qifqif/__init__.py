@@ -60,7 +60,7 @@ def query_tag(cached_tag):
     return tag
 
 
-def query_match(payee):
+def query_match(t):
     """Query a match for payee line as long as a correct one is not entered.
     """
     set_completer(sorted(complete_matches(payee)))
@@ -69,9 +69,10 @@ def query_match(payee):
         if match.isspace():  # Go back, discard entered category
             print(2 * CLEAR, end='')
             break
-        if not tags.is_match(match, payee):
+        if not tags.is_match(match, t):
             print(CLEAR + '%s Match rejected: %s' %
-                  (TERM.red('✖'), diff(payee, match, TERM, as_error=True)))
+                  (TERM.red('✖'), tags.diff_match(
+                   t, match, TERM, as_error=True)))
         else:
             print(CLEAR + "%s Match accepted: %s" %
                   (TERM.green('✔'), str(match) if match else
@@ -116,7 +117,7 @@ def process_transaction(t, cached_tag, cached_match, options):
                                         else TERM.red('<none>')))
             # Query match if tag entered or edit
             if (tag != cached_tag) or edit:
-                match = query_match(t['payee'])
+                match = query_match(t)
                 if not match.isspace():
                     break
             else:
