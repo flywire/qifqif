@@ -63,7 +63,7 @@ def query_tag(cached_tag):
 def query_match(t):
     """Query a match for payee line as long as a correct one is not entered.
     """
-    set_completer(sorted(complete_matches(payee)))
+    set_completer(sorted(complete_matches(t['payee'])))
     while True:
         match = quick_input('Match')
         if match.isspace():  # Go back, discard entered category
@@ -82,23 +82,29 @@ def query_match(t):
     return match
 
 
+def field_repr(field):
+    """Print padded field with leading sentinel symbol.
+    """
+    pad_width = 8
+    return '%s %s' % ({v: k for k, v in tags.FIELDS.items()}[field],
+        field.title().ljust(pad_width, '.'))
+
+
 def process_transaction(t, cached_tag, cached_match, options):
     """Print transaction. Tag it if it's untagged or if audit mode is True.
     """
     tag = cached_tag
     match = cached_match
-    pad_width = 8
 
-    print('Amount..: %s' % (TERM.green(str(t['amount'])) if
+    print('%s: %s' % (field_repr('amount'), TERM.green(str(t['amount'])) if
           (t['amount'] and float(t['amount']) > 0)
           else TERM.red(str(t['amount']))))
-    print('Payee...: %s' % (diff(cached_match, t['payee'], TERM)
-                            if cached_match
-                            else t['payee'] or TERM.red('<none>')))
+    print('%s: %s' % (field_repr('payee'),
+          diff(cached_match, t['payee'], TERM) if cached_match else
+          t['payee'] or TERM.red('<none>')))
     for field in ('memo', 'number'):
         if t[field]:
-            print('%s: %s' % (field.title().ljust(pad_width, '.'),
-                  t[field]))
+            print('%s: %s' % (field_repr(field), t[field]))
 
     edit = False
     audit = options.get('audit', False)
@@ -107,7 +113,7 @@ def process_transaction(t, cached_tag, cached_match, options):
             msg = "Edit '%s' category" % TERM.green(cached_tag)
             edit = quick_input(msg, 'yN') == 'Y'
         else:
-            print('%s: %s' % ('Category'.ljust(pad_width, '.'), tag))
+            print('%s: %s' % (field_repr('category'), tag))
     if t['payee']:
         while True:
             # Query for tag if no cached tag or edit
@@ -128,27 +134,27 @@ def process_transaction(t, cached_tag, cached_match, options):
 def process_file(transactions, options):
     """Process file's transactions. Operate in a dedicated edit screen."""
     tag = None
-    with TERM.fullscreen():
-        try:
-            for (i, t) in enumerate(transactions):
-                cached_tag, cached_match = tags.find_tag_for(t['payee'])
+    # with TERM.fullscreen():
+    try:
+        for (i, t) in enumerate(transactions):
+            cached_tag, cached_match = tags.find_tag_for(t)
 
-                tag, match = process_transaction(t,
-                    cached_tag or t['category'], cached_match, options)
-                if tag:
-                    tags.edit(cached_tag, cached_match, tag, match, options)
-                t['category'] = tag
-                if not t['payee']:
-                    print('Skip transaction: no payee')
-                separator = '-' * 3
-                print(separator)
-            i = i + 1
-            if not options.get('batch', False):
-                quick_input('Press any key to continue (Ctrl+D to discard '
-                            'edits)')
-        except KeyboardInterrupt:
-            return transactions[:i]
+            tag, match = process_transaction(t,
+                cached_tag or t['category'], cached_match, options)
+            if tag:
+                tags.edit(cached_tag, cached_match, tag, match, options)
+            t['category'] = tag
+            if not t['payee']:
+                print('Skip transaction: no payee')
+            separator = '-' * 3
+            print(separator)
+        i = i + 1
+        if not options.get('batch', False):
+            quick_input('Press any key to continue (Ctrl+D to discard '
+                        'edits)')
+    except KeyboardInterrupt:
         return transactions[:i]
+    return transactions[:i]
 
 
 FIELDS = {'D': 'date', 'T': 'amount', 'P': 'payee', 'L': 'category',
@@ -235,7 +241,7 @@ def parse_args(argv):
                         help='configuration filename in json format. '
                         'DEFAULT: ~/.qifqif.json',
                         default=os.path.join(os.path.expanduser('~'),
-                                             '.qifqif.json'))
+                                             '.qifqif2.json'))
     parser.add_argument('-d', '--dry-run', dest='dry-run',
                         action='store_true', help=('dry-run mode: just print '
                                                    'instead of write file'))

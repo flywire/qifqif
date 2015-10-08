@@ -12,40 +12,48 @@ import re
 
 TAGS = dict()
 
-SENTINELS = ('⌚', '✏')
-FIELDS = {'⌚': 'payee', 
-    '✏': 'note',
-    }
+FIELDS = {u'ⓐ': 'amount',
+    u'ⓓ': 'date',
+    u'ⓟ': 'payee',
+    u'ⓝ': 'note',
+    u'ⓕ': 'filename',
+    u'ⓒ': 'category'}
 
-def is_match(line, t):
-    """Returns True if payee line contains keyword.
-    """
-    tokens = re.split('(%s)' % '|'.join(SENTINELS), line)
+
+def validate_line_as_matcher(t, line):
+    tokens = re.split('(%s)' % '|'.join(FIELDS.keys()), line)
     field = 'payee'
-    match = {}
+    matcher = {k: [] for k in FIELDS.values()}
     for tok in tokens:
-        if tok in SENTINELS:
-            field = FIELDS[t]
-            continue
-        match[field].append(tok)
+        if tok in FIELDS.keys():
+            field = FIELDS[tok]
+            matcher[field].append(tok)
+    return is_transaction_match(t, matcher)
+
+
+def is_transaction_match(t, matcher):
+    """Returns True if line matches given rules.
+    """
     ok = True
-    for field in match:
-        pattern = '.*'.join(match[field])
-        ok &= re.match(pattern, t[field])
+    print('matcher: %s' % matcher)
+    for field in matcher:
+        pattern = r'.*'.join('\b%s\b' % matcher[field])
+        ok &= re.search(pattern, ) is not None
 
-    return re.search(r'\b%s\b' % re.escape(keyword), payee, re.I) is not None
+    # return re.search(r'\b%s\b' % re.escape(keyword), payee, re.I) is not None
+    return ok
 
 
-def find_tag_for(payee):
-    """If payee contains a saved keyword, returns corresponding tuple
-       (tag, keyword).
+def find_tag_for(t):
+    """If transaction contains a match, returns corresponding tuple
+       (tag, match).
     """
     res = []
-    if payee:
-        for (tag, keywords) in TAGS.items():
-            for k in keywords:
-                if is_match(k, payee):
-                    res.append((tag, k))
+    if t:
+        for (tag, matchers) in TAGS.items():
+            for matcher in matchers:
+                if is_transaction_match(t, matcher):
+                    res.append((tag, matcher))
     if res:
         return max(res, key=lambda x: len(x[1]))
     return None, None
