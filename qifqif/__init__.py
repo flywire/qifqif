@@ -157,10 +157,6 @@ def process_file(transactions, options):
     return transactions[:i]
 
 
-FIELDS = {'D': 'date', 'T': 'amount', 'P': 'payee', 'L': 'category',
-          'N': 'number', 'M': 'memo'}
-
-
 def parse_file(lines, options=None):
     """Return list of transactions as ordered dicts with fields save in same
        order as they appear in input file.
@@ -175,8 +171,8 @@ def parse_file(lines, options=None):
         if field_id == '^':
             res.append(transaction)
             transaction = OrderedDict([])
-        elif field_id in FIELDS.keys():
-            transaction[FIELDS[field_id]] = line[1:]
+        elif field_id in tags.FIELDS.keys():
+            transaction[tags.FIELDS[field_id]] = line[1:]
         elif line:
             transaction[idx] = line
     if transaction:
@@ -184,7 +180,7 @@ def parse_file(lines, options=None):
     # post-check to not interfere with present keys order
     no_payee_count = 0
     for t in res:
-        for field in FIELDS.values():
+        for field in tags.FIELDS.keys():
             if field not in t:
                 t[field] = None
                 if field == 'payee':
@@ -204,15 +200,12 @@ def parse_file(lines, options=None):
 def dump_to_buffer(transactions):
     """Output transactions to file of TERMinal.
     """
-    reverse_fields = {}
-    for (key, val) in FIELDS.items():
-        reverse_fields[val] = key
     lines = []
     for t in transactions:
         for key in t:
             if t[key]:
                 try:
-                    lines.append('%s%s\n' % (reverse_fields[key], t[key]))
+                    lines.append('%s%s\n' % (tags.FIELDS[key][0], t[key]))
                 except KeyError:  # Unrecognized field
                     lines.append(t[key] + '\n')
         lines.append('^\n')

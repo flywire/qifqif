@@ -12,21 +12,22 @@ import re
 
 TAGS = dict()
 
-FIELDS = {u'ⓐ': 'amount',
-    u'ⓓ': 'date',
-    u'ⓟ': 'payee',
-    u'ⓝ': 'note',
-    u'ⓕ': 'filename',
-    u'ⓒ': 'category'}
+FIELDS = {'amount': ('T', u'ⓐ'),
+    'date': ('D', u'ⓓ'),
+    'payee': ('P', u'ⓟ'),
+    'memo': ('M', u'ⓝ'),
+    'file': ('', u'ⓕ'),
+    'category': ('L', u'ⓒ')}
+SENTINELS = {v[1]: k for (k, v) in FIELDS.items()}
 
 
 def validate_line_as_matcher(t, line):
-    tokens = re.split('(%s)' % '|'.join(FIELDS.keys()), line)
+    tokens = re.split('(%s)' % '|'.join(SENTINELS.keys()), line)
     field = 'payee'
-    matcher = {k: [] for k in FIELDS.values()}
+    matcher = {k: [] for k in FIELDS.keys()}
     for tok in tokens:
-        if tok in FIELDS.keys():
-            field = FIELDS[tok]
+        if tok in SENTINELS.keys():
+            field = FIELDS[SENTINELS[tok]]
             matcher[field].append(tok)
     return is_transaction_match(t, matcher)
 
