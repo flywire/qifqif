@@ -13,22 +13,54 @@ import re
 TAGS = dict()
 
 
-def is_match(keyword, payee):
-    """Returns True if payee line contains keyword.
+def rulify(line, fields):
+    """Make a rule from a line containing tag markers and matching tokens
     """
-    return re.search(r'\b%s\b' % re.escape(keyword), payee, re.I) is not None
+    print('ya')
+    tokens = re.split(r'(\b%s\b)' % '|'.join(
+                      [x. lower() for x in fields.keys()]), line)
+    curr_field = 'payee'  # use payee if no field marker in line
+    rule = dict()
+    rule[curr_field] = []
+    for tok in tokens:
+        tok = tok.upper()
+        if tok in fields.keys():
+            if not len(rule[curr_field]):
+                print('del %s' % curr_field)
+                del rule[curr_field]
+            print ('> %s %s' % (rule, curr_field))
+            curr_field = fields[tok]
+            rule[curr_field] = []
+        elif tok:
+            rule[curr_field].append(tok)
+    return rule
 
 
-def find_tag_for(payee):
-    """If payee contains a saved keyword, returns corresponding tuple
+def is_match(t, rule):
+    """Returns (True, None) if line matches given rule or (False, field) if no
+       match with field being the field that fails matching.
+    """
+    for field in rule:
+        if rule[field]:
+            print('hic %s %s' % (field, rule[field]))
+            pattern = '.*'.join(['\b%s\b' % re.escape(x) for x in rule[field]])
+            print('%s / %s' % (pattern, t[field]))
+            if not re.search(pattern, t[field]):
+                return False, field
+    return True, None
+
+
+def find_tag_for(t):
+    """If payee satisfies a matching rule, returns corresponding tuple
        (tag, keyword).
     """
     res = []
-    if payee:
-        for (tag, keywords) in TAGS.items():
-            for k in keywords:
-                if is_match(k, payee):
-                    res.append((tag, k))
+    if t:
+        print(TAGS)
+        for (tag, matchers) in TAGS.items():
+            for matcher in matchers:
+                if is_match(t, matcher):
+                    res.append((tag, matcher))
     if res:
         return max(res, key=lambda x: len(x[1]))
     return None, None
@@ -64,6 +96,7 @@ def edit(cached_tag, cached_match, tag, match, options):
     """Save a tag modification into dictionary and save the latter on file.
     """
     global TAGS
+    match = match.upper()
     tags = TAGS.copy()
     if tag and tag != cached_tag:
         if cached_tag:

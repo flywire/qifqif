@@ -30,7 +30,7 @@ def diff(_str, candidate, term, as_error=False):
     words = match.split(' ')
     res = term.red(candidate[:beg]) if as_error else candidate[:beg]
     for w in words:
-        res += (term.green(w) if tags.is_match(w, _str)
+        res += (term.green(w) if w in _str
                 else term.yellow(w)) + ' '
     res += '\b' + (term.red(candidate[beg + end:]) if as_error
                    else candidate[beg + end:])
