@@ -32,7 +32,7 @@ def rulify(line, fields):
             curr_field = fields[tok]
             rule[curr_field] = []
         elif tok:
-            rule[curr_field].append(tok)
+            rule[curr_field].append(tok.strip())
     return rule
 
 
@@ -42,10 +42,9 @@ def is_match(t, rule):
     """
     for field in rule:
         if rule[field]:
-            print('hic %s %s' % (field, rule[field]))
-            pattern = '.*'.join(['\b%s\b' % re.escape(x) for x in rule[field]])
-            print('%s / %s' % (pattern, t[field]))
-            if not re.search(pattern, t[field]):
+            pattern = r'%s.*' % '.*'.join([re.escape(x) for x in rule[field]])
+            m = re.search(pattern, t[field])
+            if not m:
                 return False, field
     return True, None
 
