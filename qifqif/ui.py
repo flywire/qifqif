@@ -11,8 +11,6 @@ import re
 
 from difflib import SequenceMatcher
 
-from qifqif import tags
-
 
 readline.parse_and_bind('tab: complete')
 
@@ -22,7 +20,7 @@ def diff(_str, candidate, term, as_error=False):
         words are green, partial matches (chars) are orange.
         If as_error is True, non matching chars are red.
     """
-
+    print('diff %s VS %s\n' % (_str, candidate))
     match = SequenceMatcher(None, _str.lower(), candidate.lower())
     match_indexes = match.find_longest_match(0, len(_str), 0, len(candidate))
     _, beg, end = match_indexes

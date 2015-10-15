@@ -69,10 +69,11 @@ def query_match(t):
         if line.isspace():  # Go back, discard entered category
             print(2 * CLEAR, end='')
             break
-        match, field_err = tags.is_match(t, tags.rulify(line, FIELDS))
+        rule = tags.rulify(line, FIELDS)
+        match, field_err = tags.is_match(t, rule)
         if not match:
             print(CLEAR + '%s Match rejected: %s' %
-                  (TERM.red('✖'), diff(t[field_err], line, TERM,
+                  (TERM.red('✖'), diff(t[field_err], rule[field_err], TERM,
                    as_error=True)))
         else:
             print(CLEAR + "%s Match accepted: %s" %
@@ -90,15 +91,16 @@ def process_transaction(t, cached_tag, cached_match, options):
     match = cached_match
     pad_width = 8
 
-    print('Amount..: %s' % (TERM.green(str(t['amount'])) if
+    print('%s..: %s' % (highlight_char('amount', 5),
+          TERM.green(str(t['amount'])) if
           (t['amount'] and float(t['amount']) > 0)
           else TERM.red(str(t['amount']))))
-    print('Payee...: %s' % (diff(cached_match, t['payee'], TERM)
-                            if cached_match
-                            else t['payee'] or TERM.red('<none>')))
+    print('%s...: %s' % (highlight_char('payee', 0),
+        diff(cached_match, t['payee'], TERM) if cached_match else t['payee']
+        or TERM.red('<none>')))
     for field in ('memo', 'number'):
         if t[field]:
-            print('%s: %s' % (field.title().ljust(pad_width, '.'),
+            print('%s: %s' % (highlight_char(field, 0, True).ljust(pad_width, '.'),
                   t[field]))
 
     edit = False
@@ -216,10 +218,16 @@ def dump_to_buffer(transactions):
     return res
 
 
-def highlight_char(word, index=0):
+def highlight_char(word, index=0, brackets=False):
     """Return word with n-th letter highlighted
     """
-    return word[:index] + TERM.reverse(word[index]) + word[index + 1:]
+    highlight = '%s%s%s' % (
+        '[' if brackets else '',
+        TERM.reverse(word[index]),
+        ']' if brackets else '')
+    return '%s%s%s' % (word[:index],
+                       highlight,
+                       word[index + 1:])
 
 
 def parse_args(argv):

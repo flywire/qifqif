@@ -33,6 +33,7 @@ def rulify(line, fields):
             rule[curr_field] = []
         elif tok:
             rule[curr_field].append(tok.strip())
+    print 'rule is %s' % rule
     return rule
 
 
@@ -46,6 +47,8 @@ def is_match(t, rule):
             m = re.search(pattern, t[field])
             if not m:
                 return False, field
+        else:
+            return False, field
     return True, None
 
 
@@ -95,7 +98,6 @@ def edit(cached_tag, cached_match, tag, match, options):
     """Save a tag modification into dictionary and save the latter on file.
     """
     global TAGS
-    match = match.upper()
     tags = TAGS.copy()
     if tag and tag != cached_tag:
         if cached_tag:
